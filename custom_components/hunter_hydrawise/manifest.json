@@ -10,6 +10,6 @@
   "homekit": {},
   "requirements": ["apischema==0.18.0", "gql==3.4.1"],
   "ssdp": [],
-  "zeroconf": [],
-  "version": "0.0.1"
+  "version": "0.0.1",
+  "zeroconf": []
 }
