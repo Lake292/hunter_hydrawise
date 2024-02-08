@@ -1,0 +1,15 @@
+{
+  "domain": "hunter_hydrawise",
+  "name": "Hunter Hydrawise",
+  "codeowners": ["@Lake292"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/Lake292/hunter_hydrawise",
+  "issue_tracker": "https://github.com/Lake292/hunter_hydrawise/issues",
+  "homekit": {},
+  "iot_class": "cloud_polling",
+  "requirements": ["apischema==0.18.0", "gql==3.4.1"],
+  "ssdp": [],
+  "zeroconf": [],
+  "version": "0.0.1"
+}
