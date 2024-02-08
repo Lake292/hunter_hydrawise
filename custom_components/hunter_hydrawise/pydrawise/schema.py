@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, UTC
 from enum import Enum, auto
+from typing import Optional, Union
 
 from apischema.conversions import Conversion
 from apischema.metadata import conversion, skip
@@ -167,14 +168,14 @@ class WateringSettings:
     """Generic settings for a watering program."""
 
     fixed_watering_adjustment: int
-    cycle_and_soak_settings: CycleAndSoakSettings | None
+    cycle_and_soak_settings: Optional[CycleAndSoakSettings]  # noqa: UP007
 
 
 @dataclass
 class AdvancedWateringSettings(WateringSettings):
     """Advanced watering program settings."""
 
-    advanced_program: AdvancedProgram | None
+    advanced_program: Optional[AdvancedProgram]  # noqa: UP007
 
 
 @dataclass
@@ -227,16 +228,16 @@ class ScheduledZoneRuns:
     """Scheduled runs for a zone."""
 
     summary: str
-    current_run: ScheduledZoneRun | None
-    next_run: ScheduledZoneRun | None
-    status: str | None
+    current_run: Optional[ScheduledZoneRun]  # noqa: UP007
+    next_run: Optional[ScheduledZoneRun]  # noqa: UP007
+    status: Optional[str]  # noqa: UP007
 
 
 @dataclass
 class PastZoneRuns:
     """Previous zone runs."""
 
-    last_run: ScheduledZoneRun | None
+    last_run: Optional[ScheduledZoneRun]  # noqa: UP007
     runs: list[ScheduledZoneRun]
 
 
@@ -245,7 +246,7 @@ class ZoneStatus:
     """A zone's status."""
 
     relative_water_balance: int
-    suspended_until: datetime | None = field(metadata=DateTime.conversion())
+    suspended_until: Optional[datetime] = field(metadata=DateTime.conversion())  # noqa: UP007
 
 
 @dataclass
@@ -261,7 +262,7 @@ class ZoneSuspension:
 class Zone(BaseZone):
     """A watering zone."""
 
-    watering_settings: AdvancedWateringSettings | StandardWateringSettings
+    watering_settings: Union[AdvancedWateringSettings, StandardWateringSettings]  # noqa: UP007
     scheduled_runs: ScheduledZoneRuns
     past_runs: PastZoneRuns
     status: ZoneStatus
@@ -313,7 +314,7 @@ class SensorModel:
 class SensorStatus:
     """Current status of a sensor."""
 
-    water_flow: LocalizedValueType | None
+    water_flow: Optional[LocalizedValueType]  # noqa: UP007
     active: bool
 
 
@@ -349,7 +350,7 @@ class ControllerStatus:
     online: bool
     actual_water_time: WaterTime
     normal_water_time: WaterTime
-    last_contact: DateTime | None = None
+    last_contact: Optional[DateTime] = None  # noqa: UP007
 
 
 @dataclass
@@ -366,7 +367,7 @@ class Controller:
     sensors: list[Sensor]
     zones: list[Zone] = field(default_factory=list, metadata=skip(deserialization=True))
     permitted_program_start_times: list[ProgramStartTime] = field(default_factory=list)
-    status: ControllerStatus | None = field(default=None)
+    status: Optional[ControllerStatus] = field(default=None)  # noqa: UP007
 
 
 @dataclass
