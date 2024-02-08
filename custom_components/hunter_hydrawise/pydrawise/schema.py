@@ -5,9 +5,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone, UTC
+from datetime import datetime, timedelta, UTC
 from enum import Enum, auto
-from typing import Optional, Union
 
 from apischema.conversions import Conversion
 from apischema.metadata import conversion, skip
