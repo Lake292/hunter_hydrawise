@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, UTC
 from enum import Enum, auto
 from typing import Optional, Union
 
@@ -70,7 +70,7 @@ class DateTime:
         local = dt
         if local.tzinfo is None:
             # Make sure we have a timezone set so strftime outputs a valid string.
-            local = local.replace(tzinfo=datetime.now(timezone.utc).astimezone().tzinfo)
+            local = local.replace(tzinfo=datetime.now(UTC).astimezone().tzinfo)
         return DateTime(
             value=local.strftime("%a, %d %b %y %H:%I:%S %z"),
             timestamp=int(dt.timestamp()),
@@ -168,14 +168,14 @@ class WateringSettings:
     """Generic settings for a watering program."""
 
     fixed_watering_adjustment: int
-    cycle_and_soak_settings: Optional[CycleAndSoakSettings]
+    cycle_and_soak_settings: CycleAndSoakSettings | None
 
 
 @dataclass
 class AdvancedWateringSettings(WateringSettings):
     """Advanced watering program settings."""
 
-    advanced_program: Optional[AdvancedProgram]
+    advanced_program: AdvancedProgram | None
 
 
 @dataclass
@@ -228,16 +228,16 @@ class ScheduledZoneRuns:
     """Scheduled runs for a zone."""
 
     summary: str
-    current_run: Optional[ScheduledZoneRun]
-    next_run: Optional[ScheduledZoneRun]
-    status: Optional[str]
+    current_run: ScheduledZoneRun | None
+    next_run: ScheduledZoneRun | None
+    status: str | None
 
 
 @dataclass
 class PastZoneRuns:
     """Previous zone runs."""
 
-    last_run: Optional[ScheduledZoneRun]
+    last_run: ScheduledZoneRun | None
     runs: list[ScheduledZoneRun]
 
 
@@ -246,7 +246,7 @@ class ZoneStatus:
     """A zone's status."""
 
     relative_water_balance: int
-    suspended_until: Optional[datetime] = field(metadata=DateTime.conversion())
+    suspended_until: datetime | None = field(metadata=DateTime.conversion())
 
 
 @dataclass
@@ -262,7 +262,7 @@ class ZoneSuspension:
 class Zone(BaseZone):
     """A watering zone."""
 
-    watering_settings: Union[AdvancedWateringSettings, StandardWateringSettings]
+    watering_settings: AdvancedWateringSettings | StandardWateringSettings
     scheduled_runs: ScheduledZoneRuns
     past_runs: PastZoneRuns
     status: ZoneStatus
@@ -314,7 +314,7 @@ class SensorModel:
 class SensorStatus:
     """Current status of a sensor."""
 
-    water_flow: Optional[LocalizedValueType]
+    water_flow: LocalizedValueType | None
     active: bool
 
 
@@ -350,7 +350,7 @@ class ControllerStatus:
     online: bool
     actual_water_time: WaterTime
     normal_water_time: WaterTime
-    last_contact: Optional[DateTime] = None
+    last_contact: DateTime | None = None
 
 
 @dataclass
@@ -367,7 +367,7 @@ class Controller:
     sensors: list[Sensor]
     zones: list[Zone] = field(default_factory=list, metadata=skip(deserialization=True))
     permitted_program_start_times: list[ProgramStartTime] = field(default_factory=list)
-    status: Optional[ControllerStatus] = field(default=None)
+    status: ControllerStatus | None = field(default=None)
 
 
 @dataclass
