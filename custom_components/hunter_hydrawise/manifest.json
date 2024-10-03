@@ -8,7 +8,7 @@
   "homekit": {},
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/Lake292/hunter_hydrawise/issues",
-  "requirements": ["apischema==0.18.3", "gql==3.4.1"],
+  "requirements": ["apischema==0.18.1", "gql==3.4.1"],
   "ssdp": [],
   "version": "0.0.1",
   "zeroconf": []
