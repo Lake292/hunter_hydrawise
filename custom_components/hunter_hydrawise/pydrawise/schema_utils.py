@@ -1,3 +1,4 @@
+# pylint: skip-file
 """Utilities for managing the GraphQL schema."""
 
 from __future__ import annotations

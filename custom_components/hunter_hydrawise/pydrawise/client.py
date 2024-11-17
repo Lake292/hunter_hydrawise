@@ -3,7 +3,6 @@
 from datetime import datetime
 import logging
 
-from apischema.graphql import graphql_schema
 from gql import Client
 from gql.dsl import DSLField, DSLMutation, DSLQuery, DSLSelectable, dsl_gql
 from gql.transport.aiohttp import AIOHTTPTransport

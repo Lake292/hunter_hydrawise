@@ -1,3 +1,4 @@
+# pylint: skip-file
 """GraphQL API schema for pydrawise."""
 
 from __future__ import annotations
