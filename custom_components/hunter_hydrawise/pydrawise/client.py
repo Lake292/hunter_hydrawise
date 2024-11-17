@@ -1,22 +1,20 @@
 """Client library for interacting with Hydrawise's cloud API."""
 
 from datetime import datetime
-from functools import cache
 import logging
 
 from apischema.graphql import graphql_schema
 from gql import Client
-from gql.dsl import DSLField, DSLMutation, DSLQuery, DSLSchema, DSLSelectable, dsl_gql
-from gql.transport.aiohttp import AIOHTTPTransport, log as gql_log
-from graphql import GraphQLSchema
+from gql.dsl import DSLField, DSLMutation, DSLQuery, DSLSelectable, dsl_gql
+from gql.transport.aiohttp import AIOHTTPTransport
+from gql.transport.aiohttp import log as gql_log
 
 from .auth import Auth
 from .exceptions import MutationError
 from .schema import (
+    DSL_SCHEMA,
     Controller,
     DateTime,
-    Mutation,
-    Query,
     StatusCodeAndSummary,
     User,
     Zone,
@@ -28,14 +26,6 @@ from .schema_utils import deserialize, get_selectors
 gql_log.setLevel(logging.ERROR)
 
 API_URL = "https://app.hydrawise.com/api/v2/graph"
-
-
-@cache
-def _get_schema() -> GraphQLSchema:
-    return graphql_schema(
-        query=[getattr(Query, m) for m in Query.__abstractmethods__],
-        mutation=[getattr(Mutation, m) for m in Mutation.__abstractmethods__],
-    )
 
 
 class Hydrawise:
@@ -50,7 +40,6 @@ class Hydrawise:
         :param auth: Handles authentication and transport.
         """
         self._auth = auth
-        self._schema = DSLSchema(_get_schema())
 
     async def _client(self) -> Client:
         headers = {"Authorization": await self._auth.token()}
@@ -78,8 +67,10 @@ class Hydrawise:
 
         :rtype: User
         """
-        selector = self._schema.Query.me.select(*get_selectors(self._schema, User))
-        result = await self._query(selector)
+        result = await self._query(
+            DSL_SCHEMA.Query.me.select(*get_selectors(User))
+        )
+
         return deserialize(User, result["me"])
 
     async def get_controllers(self) -> list[Controller]:
@@ -87,12 +78,11 @@ class Hydrawise:
 
         :rtype: list[Controller]
         """
-        selector = self._schema.Query.me.select(
-            self._schema.User.controllers.select(
-                *get_selectors(self._schema, Controller)
-            ),
+        result = await self._query(
+            DSL_SCHEMA.Query.me.select(
+                DSL_SCHEMA.User.controllers.select(*get_selectors(Controller)),
+            )
         )
-        result = await self._query(selector)
         return deserialize(list[Controller], result["me"]["controllers"])
 
     async def get_controller(self, controller_id: int) -> Controller:
@@ -101,10 +91,11 @@ class Hydrawise:
         :param controller_id: Unique identifier for the controller to retrieve.
         :rtype: Controller
         """
-        selector = self._schema.Query.controller(controllerId=controller_id).select(
-            *get_selectors(self._schema, Controller),
+        result = await self._query(
+            DSL_SCHEMA.Query.controller(controllerId=controller_id).select(
+                *get_selectors(Controller),
+            )
         )
-        result = await self._query(selector)
         return deserialize(Controller, result["controller"])
 
     async def get_zones(self, controller: Controller) -> list[Zone]:
@@ -113,10 +104,11 @@ class Hydrawise:
         :param controller: Controller whose zones to fetch.
         :rtype: list[Zone]
         """
-        selector = self._schema.Query.controller(controllerId=controller.id).select(
-            self._schema.Controller.zones.select(*get_selectors(self._schema, Zone)),
+        result = await self._query(
+            DSL_SCHEMA.Query.controller(controllerId=controller.id).select(
+                DSL_SCHEMA.Controller.zones.select(*get_selectors(Zone)),
+            )
         )
-        result = await self._query(selector)
         return deserialize(list[Zone], result["controller"]["zones"])
 
     async def get_zone(self, zone_id: int) -> Zone:
@@ -125,10 +117,9 @@ class Hydrawise:
         :param zone_id: The zone's unique identifier.
         :rtype: Zone
         """
-        selector = self._schema.Query.zone(zoneId=zone_id).select(
-            *get_selectors(self._schema, Zone)
+        result = await self._query(
+            DSL_SCHEMA.Query.zone(zoneId=zone_id).select(*get_selectors(Zone))
         )
-        result = await self._query(selector)
         return deserialize(Zone, result["zone"])
 
     async def start_zone(
@@ -153,20 +144,22 @@ class Hydrawise:
         if custom_run_duration > 0:
             kwargs["customRunDuration"] = custom_run_duration
 
-        selector = self._schema.Mutation.startZone.args(**kwargs).select(
-            *get_selectors(self._schema, StatusCodeAndSummary),
+        await self._mutation(
+            DSL_SCHEMA.Mutation.startZone.args(**kwargs).select(
+                *get_selectors(StatusCodeAndSummary),
+            )
         )
-        await self._mutation(selector)
 
     async def stop_zone(self, zone: Zone):
         """Stop a zone.
 
         :param zone: The zone to stop.
         """
-        selector = self._schema.Mutation.stopZone.args(zoneId=zone.id).select(
-            *get_selectors(self._schema, StatusCodeAndSummary),
+        await self._mutation(
+            DSL_SCHEMA.Mutation.stopZone.args(zoneId=zone.id).select(
+                *get_selectors(StatusCodeAndSummary),
+            )
         )
-        await self._mutation(selector)
 
     async def start_all_zones(
         self,
@@ -188,22 +181,22 @@ class Hydrawise:
         if custom_run_duration > 0:
             kwargs["customRunDuration"] = custom_run_duration
 
-        selector = self._schema.Mutation.startAllZones.args(**kwargs).select(
-            *get_selectors(self._schema, StatusCodeAndSummary),
+        await self._mutation(
+            DSL_SCHEMA.Mutation.startAllZones.args(**kwargs).select(
+                *get_selectors(StatusCodeAndSummary),
+            )
         )
-        await self._mutation(selector)
 
     async def stop_all_zones(self, controller: Controller):
         """Stop all zones attached to a controller.
 
         :param controller: The controller whose zones to stop.
         """
-        selector = self._schema.Mutation.stopAllZones.args(
-            controllerId=controller.id
-        ).select(
-            *get_selectors(self._schema, StatusCodeAndSummary),
+        await self._mutation(
+            DSL_SCHEMA.Mutation.stopAllZones.args(controllerId=controller.id).select(
+                *get_selectors(StatusCodeAndSummary),
+            )
         )
-        await self._mutation(selector)
 
     async def suspend_zone(self, zone: Zone, until: datetime):
         """Suspend a zone's schedule.
@@ -211,23 +204,25 @@ class Hydrawise:
         :param zone: The zone to suspend.
         :param until: When the suspension should end.
         """
-        selector = self._schema.Mutation.suspendZone.args(
-            zoneId=zone.id,
-            until=DateTime.to_json(until).value,
-        ).select(
-            *get_selectors(self._schema, StatusCodeAndSummary),
+        await self._mutation(
+            DSL_SCHEMA.Mutation.suspendZone.args(
+                zoneId=zone.id,
+                until=DateTime.to_json(until).value,
+            ).select(
+                *get_selectors(StatusCodeAndSummary),
+            )
         )
-        await self._mutation(selector)
 
     async def resume_zone(self, zone: Zone):
         """Resume a zone's schedule.
 
         :param zone: The zone whose schedule to resume.
         """
-        selector = self._schema.Mutation.resumeZone.args(zoneId=zone.id).select(
-            *get_selectors(self._schema, StatusCodeAndSummary),
+        await self._mutation(
+            DSL_SCHEMA.Mutation.resumeZone.args(zoneId=zone.id).select(
+                *get_selectors(StatusCodeAndSummary),
+            )
         )
-        await self._mutation(selector)
 
     async def suspend_all_zones(self, controller: Controller, until: datetime):
         """Suspend the schedule of all zones attached to a given controller.
@@ -235,25 +230,25 @@ class Hydrawise:
         :param controller: The controller whose zones to suspend.
         :param until: When the suspension should end.
         """
-        selector = self._schema.Mutation.suspendAllZones.args(
-            controllerId=controller.id,
-            until=DateTime.to_json(until).value,
-        ).select(
-            *get_selectors(self._schema, StatusCodeAndSummary),
+        await self._mutation(
+            DSL_SCHEMA.Mutation.suspendAllZones.args(
+                controllerId=controller.id,
+                until=DateTime.to_json(until).value,
+            ).select(
+                *get_selectors(StatusCodeAndSummary),
+            )
         )
-        await self._mutation(selector)
 
     async def resume_all_zones(self, controller: Controller):
         """Resume the schedule of all zones attached to the given controller.
 
         :param controller: The controller whose zones to resume.
         """
-        selector = self._schema.Mutation.resumeAllZones.args(
-            controllerId=controller.id
-        ).select(
-            *get_selectors(self._schema, StatusCodeAndSummary),
+        await self._mutation(
+            DSL_SCHEMA.Mutation.resumeAllZones.args(controllerId=controller.id).select(
+                *get_selectors(StatusCodeAndSummary),
+            )
         )
-        await self._mutation(selector)
 
     async def delete_zone_suspension(self, suspension: ZoneSuspension):
         """Remove a specific zone suspension.
@@ -262,7 +257,6 @@ class Hydrawise:
 
         :param suspension: The suspension to delete.
         """
-        selector = self._schema.Mutation.deleteZoneSuspension.args(
-            id=suspension.id
-        ).select()
-        await self._mutation(selector)
+        await self._mutation(
+            DSL_SCHEMA.Mutation.deleteZoneSuspension.args(id=suspension.id).select()
+        )
